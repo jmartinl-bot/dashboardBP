@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<title>Banca Partner — Dashboard de Seguimiento</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --azul-vida: #0A0E12;
+  --azul-acompanamiento: #1A2433;
+  --azul-actinver: #314566;
+  --blanco: #FFFFFF;
+  --arena: #F5F2EB;
+  --sunset: #E6C78A;
+  --subtitle-light: #C8D0E0;
+  --subtitle-dim: #8898AA;
+  --pos: #317A70;
+  --border-soft: rgba(255,255,255,0.08);
+  --border-mid: rgba(255,255,255,0.14);
+}
+html, body { height: 100%; background: var(--azul-vida); color: var(--blanco); font-family: 'Poppins', -apple-system, sans-serif; font-size: 14px; -webkit-font-smoothing: antialiased; }
+.app { display: flex; height: 100vh; overflow: hidden; }
+
+/* SIDEBAR */
+.sidebar { width: 232px; flex-shrink: 0; background: #060A0E; display: flex; flex-direction: column; border-right: 1px solid var(--border-soft); }
+.sidebar-header { padding: 24px 20px 20px; border-bottom: 1px solid var(--border-soft); }
+.logo-lockup { display: flex; align-items: center; gap: 12px; }
+.logo-divider { width: 1.5px; height: 26px; background: rgba(255,255,255,0.3); }
+.logo-unit { font-size: 13px; font-weight: 400; letter-spacing: 0.08em; color: var(--blanco); text-transform: uppercase; }
+.sidebar-subtitle { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--subtitle-dim); margin-top: 10px; }
+.sidebar-nav { flex: 1; padding: 16px 0; overflow-y: auto; }
+.nav-section-label { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--subtitle-dim); padding: 14px 20px 6px; font-weight: 400; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 20px; font-size: 13px; font-weight: 400; color: rgba(255,255,255,0.5); cursor: pointer; transition: all .15s; border-left: 2px solid transparent; user-select: none; }
+.nav-item:hover { color: var(--blanco); background: rgba(255,255,255,0.04); }
+.nav-item.active { color: var(--blanco); border-left-color: var(--sunset); background: rgba(230,199,138,0.06); }
+.nav-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; background: var(--subtitle-dim); }
+.nav-item.active .nav-dot { background: var(--sunset); }
+.nav-badge { margin-left: auto; font-size: 10px; background: var(--azul-actinver); color: rgba(255,255,255,0.7); padding: 1px 6px; border-radius: 10px; }
+.sidebar-footer { padding: 16px 20px; border-top: 1px solid var(--border-soft); font-size: 11px; color: var(--subtitle-dim); }
+
+/* MAIN */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.topbar { padding: 16px 32px; border-bottom: 1px solid var(--border-soft); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.topbar-title { font-size: 18px; font-weight: 700; }
+.topbar-meta { font-size: 11px; color: var(--subtitle-dim); margin-top: 2px; }
+.corte-badge { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--sunset); border: 1px solid rgba(230,199,138,0.3); padding: 4px 10px; border-radius: 3px; }
+.content { flex: 1; overflow-y: auto; padding: 28px 32px; scrollbar-width: thin; scrollbar-color: var(--azul-actinver) transparent; }
+.view { display: none; }
+.view.active { display: block; }
+
+/* SECTIONS */
+.section-header { margin-bottom: 20px; }
+.section-title { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--subtitle-light); }
+.section-rule { width: 32px; height: 2px; background: var(--sunset); margin-top: 6px; }
+.content-divider { height: 1px; background: var(--border-soft); margin: 24px 0; }
+
+/* KPI GRID */
+.kpi-grid { display: grid; gap: 16px; margin-bottom: 20px; }
+.kpi-grid-4 { grid-template-columns: repeat(4, 1fr); }
+.kpi-grid-3 { grid-template-columns: repeat(3, 1fr); }
+.kpi-grid-2 { grid-template-columns: repeat(2, 1fr); }
+.kpi-card { background: var(--azul-acompanamiento); border: 1px solid var(--border-soft); border-radius: 4px; padding: 20px 24px; }
+.kpi-card.highlight { border-left: 2px solid var(--sunset); }
+.kpi-label { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--subtitle-dim); margin-bottom: 10px; }
+.kpi-value { font-size: 36px; font-weight: 700; line-height: 1; }
+.kpi-sub { font-size: 12px; color: var(--subtitle-dim); margin-top: 6px; }
+.kpi-delta { font-size: 12px; color: var(--sunset); margin-top: 6px; }
+
+/* PROGRESS VS META */
+.meta-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.meta-label { font-size: 11px; color: var(--subtitle-dim); letter-spacing: 0.06em; }
+.meta-vals { font-size: 11px; color: var(--subtitle-light); }
+.meta-vals span { color: var(--sunset); font-weight: 700; }
+.progress-bar-bg { height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; margin-bottom: 16px; }
+.progress-bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--azul-actinver), var(--sunset)); transition: width .4s; }
+
+/* CHARTS */
+.charts-grid { display: grid; gap: 20px; margin-bottom: 20px; }
+.charts-grid-2 { grid-template-columns: repeat(2, 1fr); }
+.charts-grid-3 { grid-template-columns: repeat(3, 1fr); }
+.chart-card { background: var(--azul-acompanamiento); border: 1px solid var(--border-soft); border-radius: 4px; padding: 20px 24px; }
+.chart-card-title { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--subtitle-dim); margin-bottom: 16px; }
+
+/* TABLES */
+.table-wrap { background: var(--azul-acompanamiento); border: 1px solid var(--border-soft); border-radius: 4px; margin-bottom: 20px; overflow: hidden; }
+.table-header { padding: 14px 24px; border-bottom: 1px solid var(--border-soft); display: flex; align-items: center; justify-content: space-between; }
+.table-header-title { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--subtitle-dim); }
+table { width: 100%; border-collapse: collapse; }
+thead th { padding: 10px 16px; text-align: left; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--subtitle-dim); font-weight: 400; border-bottom: 1px solid var(--border-soft); }
+tbody tr { border-bottom: 1px solid var(--border-soft); transition: background .1s; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: rgba(255,255,255,0.03); }
+tbody td { padding: 10px 16px; font-size: 12px; }
+tbody td.muted { color: var(--subtitle-dim); }
+
+/* BADGES */
+.badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 10px; letter-spacing: 0.08em; font-weight: 400; text-transform: uppercase; }
+.badge-activo { background: rgba(49,122,112,0.2); color: #5ABF99; border: 1px solid rgba(49,122,112,0.3); }
+.badge-activacion { background: rgba(49,69,102,0.3); color: #7B9FD4; border: 1px solid rgba(49,69,102,0.5); }
+.badge-negociacion { background: rgba(181,134,87,0.15); color: var(--sunset); border: 1px solid rgba(181,134,87,0.3); }
+.badge-contacto { background: rgba(255,255,255,0.05); color: var(--subtitle-light); border: 1px solid var(--border-mid); }
+.badge-prospecto { background: rgba(255,255,255,0.03); color: var(--subtitle-dim); border: 1px solid var(--border-soft); }
+.badge-cita { background: rgba(122,99,145,0.15); color: #B4A0C8; border: 1px solid rgba(122,99,145,0.3); }
+.badge-perdida { background: rgba(122,49,49,0.15); color: #BF7A7A; border: 1px solid rgba(122,49,49,0.3); }
+.badge-pendiente { background: rgba(230,199,138,0.1); color: var(--sunset); border: 1px solid rgba(230,199,138,0.25); }
+.badge-proceso { background: rgba(49,69,102,0.25); color: #7B9FD4; border: 1px solid rgba(49,69,102,0.4); }
+.badge-por-agendar { background: rgba(255,255,255,0.03); color: var(--subtitle-dim); border: 1px solid var(--border-soft); }
+
+/* FUNNEL */
+.funnel-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin-bottom: 20px; }
+.funnel-step { background: var(--azul-acompanamiento); border: 1px solid var(--border-soft); border-radius: 4px; padding: 16px 12px; text-align: center; }
+.funnel-step.hl { border-top: 2px solid var(--sunset); }
+.funnel-count { font-size: 28px; font-weight: 700; }
+.funnel-label { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--subtitle-dim); margin-top: 6px; }
+
+/* CLIENT TABLE */
+.filter-btn { font-size: 10px; padding: 3px 10px; border-radius: 3px; border: 1px solid var(--border-mid); background: transparent; color: var(--subtitle-dim); cursor: pointer; font-family: inherit; text-transform: uppercase; letter-spacing: 0.08em; transition: all .15s; }
+.filter-btn.active, .filter-btn:hover { border-color: var(--sunset); color: var(--sunset); }
+.prod-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.prod-tag { font-size: 9px; padding: 1px 6px; border-radius: 2px; background: rgba(49,69,102,0.4); color: var(--subtitle-light); border: 1px solid rgba(49,69,102,0.6); }
+.fondeado-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.fondeado-dot.yes { background: #5ABF99; }
+.fondeado-dot.no { background: var(--subtitle-dim); }
+.aum-bar-cell { display: flex; align-items: center; gap: 8px; }
+.aum-bar { height: 4px; border-radius: 2px; background: var(--azul-actinver); flex-shrink: 0; }
+
+/* CANAL SELECT */
+.canal-select-wrap { display: flex; align-items: center; gap: 8px; }
+.canal-select-wrap label { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--subtitle-dim); white-space: nowrap; }
+.canal-select {
+  background: var(--azul-acompanamiento); color: var(--blanco);
+  border: 1px solid var(--border-mid); border-radius: 3px;
+  padding: 4px 10px; font-size: 11px; font-family: inherit;
+  cursor: pointer; outline: none; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%238898AA' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 8px center; padding-right: 24px;
+}
+.canal-select:focus { border-color: var(--sunset); }
+
+/* PENETRACION BAR */
+.penet-bar-bg { height: 10px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; }
+.penet-bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--azul-actinver), var(--sunset)); }
+.penet-labels { display: flex; justify-content: space-between; margin-top: 4px; font-size: 11px; color: var(--subtitle-dim); }
+
+/* FUNNEL COMERCIAL (Zurich) */
+.funnel-comercial { margin-bottom: 20px; }
+.funnel-tree { display: flex; flex-direction: column; gap: 0; }
+.funnel-node { display: flex; align-items: stretch; }
+.funnel-connector { width: 32px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; }
+.funnel-connector-line { width: 2px; background: rgba(255,255,255,0.08); flex: 1; margin: 0 auto; }
+.funnel-connector-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--sunset); flex-shrink: 0; margin: 8px auto 0; }
+.funnel-node-card { flex: 1; margin: 4px 0 4px 0; background: var(--azul-acompanamiento); border: 1px solid var(--border-soft); border-radius: 4px; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; }
+.funnel-node-card.root { border-left: 2px solid var(--sunset); }
+.funnel-node-label { font-size: 13px; color: var(--subtitle-light); }
+.funnel-node-val { font-size: 20px; font-weight: 700; color: var(--blanco); }
+.funnel-node-pct { font-size: 11px; color: var(--subtitle-dim); margin-top: 2px; text-align: right; }
+.funnel-sub { margin-left: 40px; }
+.funnel-sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 4px 0 4px 40px; }
+.funnel-sub-card { background: var(--azul-acompanamiento); border: 1px solid var(--border-soft); border-radius: 4px; padding: 12px 16px; }
+.funnel-sub-label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--subtitle-dim); margin-bottom: 6px; }
+.funnel-sub-val { font-size: 22px; font-weight: 700; }
+
+/* NEXT STEPS */
+.next-steps-grid { display: grid; gap: 12px; margin-bottom: 20px; }
+.next-step-card { background: var(--azul-acompanamiento); border: 1px solid var(--border-soft); border-radius: 4px; padding: 16px 20px; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.next-step-num { width: 24px; height: 24px; border-radius: 50%; background: rgba(230,199,138,0.12); border: 1px solid rgba(230,199,138,0.25); color: var(--sunset); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+.next-step-body { flex: 1; }
+.next-step-title { font-size: 13px; color: var(--blanco); margin-bottom: 4px; }
+.next-step-resp { font-size: 11px; color: var(--subtitle-dim); }
+.next-step-resp span { color: var(--sunset); }
+.next-step-status { flex-shrink: 0; }
+
+/* NOTE CARD */
+.note-card { padding: 14px 18px; background: rgba(230,199,138,0.05); border: 1px solid rgba(230,199,138,0.14); border-radius: 4px; margin-bottom: 20px; }
+.note-label { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--sunset); margin-bottom: 6px; }
+.note-text { font-size: 12px; color: var(--subtitle-light); line-height: 1.65; }
+
+/* EMPTY STATE */
+.empty-state { text-align: center; padding: 48px 24px; color: var(--subtitle-dim); }
+.empty-state-icon { font-size: 32px; margin-bottom: 12px; opacity: .4; }
+.empty-state-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; color: var(--subtitle-light); }
+.empty-state-sub { font-size: 12px; }
+
+/* RESPONSIVE */
+@media (max-width: 1200px) {
+  .kpi-grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .charts-grid-2 { grid-template-columns: 1fr; }
+  .funnel-grid { grid-template-columns: repeat(3, 1fr); }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="logo-lockup">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 389.75 124.23" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Actinver" style="height:22px;width:auto;">
+        <path fill="#FFFFFF" d="M150.42,33.61c.63,0,1.31.45,1.31,1.3v14.78h13.41c.72,0,1.3.59,1.3,1.3v4.99c0,.63-.5,1.3-1.3,1.3h-13.41v25.19c0,4.2,1.58,6.07,5.13,6.07,3.17,0,7.11-1.88,7.85-2.25.42-.19.99-.09,1.24.45l2.22,5.42c.19.5-.11.96-.43,1.13l-.17.09-.04.02c-.98.59-7.91,3.45-13.59,3.45-7.83,0-11.17-3.94-11.17-13.17v-26.4h-6.74c-.69,0-1.3-.55-1.3-1.3v-4.99c0-.69.57-1.3,1.3-1.3h6.74v-14.78c0-.72.58-1.3,1.3-1.3h6.72"/>
+        <path fill="#FFFFFF" d="M111.91,49.7c4.61,0,11.64,2.17,16.67,7.41.45.55.35,1.39-.15,1.81l-.42.4-3.64,3.26c-.5.42-1.22.44-1.72,0l-.17-.14c-2.79-3.03-6.7-4.58-10.46-4.58-7.82,0-15.51,6.65-15.51,15.48s6.96,15.86,15.39,15.86c6.02,0,8.94-2.81,11.28-5.07.25-.24.49-.47.75-.72.5-.51,1.31-.44,1.73-.05l4.04,3.23c.64.58.48,1.36.24,1.71-3.78,4.84-10.61,8.83-18.09,8.83-13.16,0-23.93-10.7-23.93-23.66s10.99-23.75,23.99-23.75"/>
+        <path fill="#FFFFFF" d="M49.47,14.43l35.27,79.95c.29.64.27,1.34-.06,1.87-.34.55-.94.85-1.69.85h-7.32c-1.16,0-1.96-.53-2.44-1.64l-6.79-15.41-.48-1.09H27.62l-.47,1.11c-1.02,2.4-2.07,4.78-3.11,7.16l-.04.09c-1.17,2.66-2.38,5.42-3.54,8.17-.07.17-.72,1.62-2.43,1.62h-7.32c-.75,0-1.35-.3-1.69-.85-.33-.52-.35-1.23-.06-1.88L44.47,14.43c.34-.69,1.26-1.53,2.6-1.53,1.61,0,2.39,1.53,2.39,1.53ZM31.92,69.23h29.85l-1.14-2.61-12.19-27.89-1.65-3.77-1.64,3.78-12.1,27.89-1.13,2.6M44.47,14.43c.34-.69,1.26-1.53,2.6-1.53,1.61,0,2.39,1.53,2.39,1.53"/>
+        <path fill="#FFFFFF" d="M221.99,49.5c16.79,0,19.29,13.75,19.29,21.94v24.3c0,.76-.62,1.36-1.3,1.36h-6.59c-.78,0-1.3-.71-1.3-1.36v-24.79c0-8.34-4.28-13.32-11.46-13.32-8.24,0-14.02,5.9-14.83,8.14l-.07.2v29.76c0,.66-.55,1.36-1.3,1.36h-6.46c-.78,0-1.3-.71-1.3-1.36v-43.72c0-.78.65-1.3,1.3-1.3h3.29c.47,0,.78.39.84.59v.04s1.49,4.15,1.49,4.15l.71,2,1.41-1.6c.06-.06,6.28-6.41,16.28-6.41"/>
+        <path fill="#FFFFFF" d="M289.34,49.82c.59,0,1.12.59.84,1.29l-21.99,45.3c-.52.97-1.9.97-2.34-.02l-21.97-45.24c-.28-.56.1-1.33.82-1.33h7.09c.55,0,.97.37,1.17.78l14.3,30.19,14.36-30.25c.23-.47.77-.72,1.17-.72h6.81"/>
+        <path fill="#FFFFFF" d="M185.19,50.03c.65,0,1.3.53,1.3,1.3v44.46c0,.68-.61,1.31-1.3,1.31h-6.47c-.71,0-1.3-.66-1.3-1.36v-44.42c0-.75.63-1.3,1.3-1.3h6.7"/>
+        <path fill="#FFFFFF" d="M363.45,49.85c3.66,0,6.77.7,7.5,1.8.19.24.25.61.11.95l-2.86,5.92c-.28.62-.92.65-1.22.5-.95-.48-2.93-.98-4.61-.98-8.02,0-11.66,6.29-11.81,6.55l-.16.28v30.86c0,.68-.56,1.36-1.3,1.36h-6.2c-.78,0-1.3-.71-1.3-1.36v-43.38c0-.74.62-1.3,1.3-1.3h3.22c.26,0,.74.33.85.76v.04s.02.04.02.04l1.31,4.12.75,2.35,1.4-2.02c.75-1.09,4.9-6.5,12.99-6.5"/>
+        <path fill="#FFFFFF" d="M314.18,49.5c12.24,0,21.47,8.9,21.47,20.71,0,.74-.09,2.01-.21,2.87-.09.71-.7,1.14-1.29,1.14h-34.63l.04,1.33c.39,6.64,5.84,13.75,15.49,13.75,5.09,0,9.5-2.27,11.62-3.6.28-.17.54-.33.79-.46.3-.14.82-.11,1.11.29l3.24,4.22.03.04.1.13c.32.41.18,1.01-.13,1.24-1.6,1.32-7.63,5.68-17.52,5.68-13.66,0-23.57-9.96-23.57-23.67s10.08-23.67,23.45-23.67M300.19,69.16h26.55s0-3.51-2.28-6.94c-2.48-3.72-6.92-5.88-10.41-5.88-6.86,0-9.94,3.46-11.85,6.07-2.15,2.95-2.15,6.75-2.15,6.75"/>
+        <path fill="#E6C78A" d="M181.84,33.6c3.24,0,5.78,2.55,5.78,5.8s-2.54,5.68-5.78,5.68-5.54-2.49-5.54-5.68,2.43-5.8,5.54-5.8"/>
+      </svg>
+      <div class="logo-divider"></div>
+      <span class="logo-unit">Banca Partner</span>
+    </div>
+    <div class="sidebar-subtitle">Dashboard de Seguimiento</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">General</div>
+    <div class="nav-item active" data-view="resumen"><div class="nav-dot"></div>Resumen</div>
+    <div class="nav-item" data-view="resultados"><div class="nav-dot"></div>Resultados Generales</div>
+    <div class="nav-section-label" style="margin-top:8px;">Clientes B2B2C</div>
+    <div class="nav-item" data-view="kearney"><div class="nav-dot"></div>Kearney<span class="nav-badge">Activo</span></div>
+    <div class="nav-item" data-view="zurich"><div class="nav-dot"></div>Zurich<span class="nav-badge">Activo</span></div>
+    <div class="nav-item" data-view="soym"><div class="nav-dot"></div>Soy+<span class="nav-badge">Activo</span></div>
+    <div class="nav-item" data-view="creel"><div class="nav-dot"></div>Creel<span class="nav-badge" style="background:rgba(122,99,145,0.2);color:#B4A0C8;">Por activar</span></div>
+  </nav>
+  <div class="sidebar-footer">Actinver · Documento interno · 2026</div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <header class="topbar">
+    <div>
+      <div class="topbar-title" id="topbar-title">Resumen</div>
+      <div class="topbar-meta">Banca Partner — Seguimiento Semanal</div>
+    </div>
+    <span class="corte-badge">Corte: 9 Jun 2026</span>
+  </header>
+
+  <div class="content">
+
+    <!-- ══ RESUMEN ══════════════════════════════════════════════════════ -->
+    <div class="view active" id="view-resumen">
+
+      <div class="section-header">
+        <div class="section-title">Estado del negocio</div>
+        <div class="section-rule"></div>
+      </div>
+
+      <div class="kpi-grid kpi-grid-4">
+        <div class="kpi-card highlight">
+          <div class="kpi-label">Empresas en pipeline</div>
+          <div class="kpi-value">42</div>
+          <div class="kpi-sub">Total gestionadas · meta: 35</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Clientes B2B2C activos</div>
+          <div class="kpi-value">3</div>
+          <div class="kpi-sub">Kearney · Zurich · Soy+</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Clientes B2C registrados</div>
+          <div class="kpi-value">39</div>
+          <div class="kpi-sub">de 575 meta 2026</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">AUM total (MXN)</div>
+          <div class="kpi-value" style="font-size:24px;">$12.05M</div>
+          <div class="kpi-sub">Activos bajo administración · Corte Jun 2026</div>
+        </div>
+      </div>
+
+      <!-- Avance vs Meta 2026 -->
+      <div class="chart-card" style="margin-bottom:20px;">
+        <div class="chart-card-title">Avance vs Meta 2026</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:32px;margin-top:4px;">
+          <div>
+            <div class="meta-row">
+              <span class="meta-label">Empresas firmadas</span>
+              <span class="meta-vals"><span>1</span> / 5</span>
+            </div>
+            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:20%"></div></div>
+            <div class="meta-row">
+              <span class="meta-label">Empresas prospectadas</span>
+              <span class="meta-vals"><span>42</span> / 35</span>
+            </div>
+            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:100%;background:linear-gradient(90deg,var(--pos),#5ABF99)"></div></div>
+          </div>
+          <div>
+            <div class="meta-row">
+              <span class="meta-label">Clientes afluentes</span>
+              <span class="meta-vals"><span>39</span> / 250</span>
+            </div>
+            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:15.6%"></div></div>
+            <div class="meta-row">
+              <span class="meta-label">Total clientes acumulados</span>
+              <span class="meta-vals"><span>39</span> / 575</span>
+            </div>
+            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:6.8%"></div></div>
+          </div>
+          <div>
+            <div class="meta-row">
+              <span class="meta-label">AUM acumulado (MXN)</span>
+              <span class="meta-vals"><span>$12.05M</span> / $1,540M MXN</span>
+            </div>
+            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:15%"></div></div>
+            <div style="font-size:10px;color:var(--subtitle-dim);margin-top:-8px;">Meta calculada: 250 clientes afluentes × AuM prom $6.17M MXN</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-header" style="margin-top:4px;">
+        <div class="section-title">Pipeline de empresas</div>
+        <div class="section-rule"></div>
+      </div>
+
+      <div class="funnel-grid">
+        <div class="funnel-step hl"><div class="funnel-count" style="color:var(--sunset);">3</div><div class="funnel-label">Cerrado Won</div></div>
+        <div class="funnel-step"><div class="funnel-count">4</div><div class="funnel-label">En activación</div></div>
+        <div class="funnel-step"><div class="funnel-count">9</div><div class="funnel-label">En negociación</div></div>
+        <div class="funnel-step"><div class="funnel-count">2</div><div class="funnel-label">Cita agendada</div></div>
+        <div class="funnel-step"><div class="funnel-count">5</div><div class="funnel-label">Contacto</div></div>
+        <div class="funnel-step"><div class="funnel-count">15</div><div class="funnel-label">Prospecto</div></div>
+      </div>
+
+      <div class="charts-grid charts-grid-2">
+        <div class="chart-card">
+          <div class="chart-card-title">Distribución del pipeline por etapa</div>
+          <div style="height:200px;"><canvas id="chart-pipeline-donut"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+            <span class="chart-card-title" style="margin-bottom:0;">Distribución por canal de origen</span>
+            <div class="canal-select-wrap">
+              <label>Canal</label>
+              <select class="canal-select" id="canal-select">
+                <option value="todos">Todos</option>
+                <option value="Banca Partner">Banca Partner</option>
+                <option value="Privada">Banca Privada</option>
+                <option value="Corporativa">Banca Corporativa</option>
+                <option value="Patrimonial">Banca Patrimonial</option>
+                <option value="Previsión Social">Previsión Social</option>
+                <option value="WM">Wealth Management</option>
+              </select>
+            </div>
+          </div>
+          <div style="height:175px;"><canvas id="chart-canal"></canvas></div>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <div class="section-title">Detalle del pipeline</div>
+        <div class="section-rule"></div>
+      </div>
+
+      <div class="table-wrap">
+        <div class="table-header">
+          <span class="table-header-title">42 empresas · ordenadas por etapa</span>
+          <span id="canal-filter-label" style="font-size:11px;color:var(--sunset);"></span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Empresa</th><th>Etapa</th><th>Canal</th><th>Industria</th><th>Región</th><th># Empleados</th><th>Responsable</th><th>Owner</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-pipeline"></tbody>
+        </table>
+      </div>
+
+    </div><!-- /resumen -->
+
+
+    <!-- ══ RESULTADOS GENERALES ═════════════════════════════════════════ -->
+    <div class="view" id="view-resultados">
+
+      <div class="section-header">
+        <div class="section-title">Resultados consolidados</div>
+        <div class="section-rule"></div>
+      </div>
+
+      <div class="kpi-grid kpi-grid-4">
+        <div class="kpi-card highlight">
+          <div class="kpi-label">AUM total (MXN)</div>
+          <div class="kpi-value" style="font-size:24px;">$12.05M</div>
+          <div class="kpi-sub">Activos bajo administración · Corte Jun 2026</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Clientes B2C totales</div>
+          <div class="kpi-value">39</div>
+          <div class="kpi-sub">En 3 empresas activas</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Clientes fondeados</div>
+          <div class="kpi-value">23</div>
+          <div class="kpi-sub">Saldo mayor a $100K MXN</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Tasa de fondeo</div>
+          <div class="kpi-value">59.0%</div>
+          <div class="kpi-sub">23 de 39 clientes</div>
+        </div>
+      </div>
+
+      <div class="kpi-grid kpi-grid-3">
+        <div class="kpi-card">
+          <div class="kpi-label">AUM promedio / cliente (MXN)</div>
+          <div class="kpi-value" style="font-size:26px;">$6.1M</div>
+          <div class="kpi-sub">AUM promedio todos los clientes</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">AUM promedio / fondeado (MXN)</div>
+          <div class="kpi-value" style="font-size:26px;">$9.9M</div>
+          <div class="kpi-sub">AUM promedio clientes fondeados</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Productos promedio / cliente</div>
+          <div class="kpi-value">1.90</div>
+          <div class="kpi-sub">Promedio de contratos activos</div>
+        </div>
+      </div>
+
+      <div class="content-divider"></div>
+
+      <div class="section-header">
+        <div class="section-title">Empresas cerradas — comparativo</div>
+        <div class="section-rule"></div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Empresa</th><th>Estado</th><th>Empleados afluentes</th><th>Clientes B2C</th><th>Penetración</th><th>Fondeados</th><th>AUM (MXN)</th><th>Banquero</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Kearney</strong></td>
+              <td><span class="badge badge-activo">Activo</span></td>
+              <td>50</td><td>38</td>
+              <td>
+                <div class="aum-bar-cell">
+                  <div class="aum-bar" style="width:76px;background:linear-gradient(90deg,var(--azul-actinver),var(--sunset));"></div>
+                  <span>76%</span>
+                </div>
+              </td>
+              <td>23 / 38</td>
+              <td style="color:var(--sunset);">$11,990,303</td>
+              <td class="muted">Lau Vanegas</td>
+            </tr>
+            <tr>
+              <td><strong>Zurich</strong></td>
+              <td><span class="badge badge-activacion">En cierre</span></td>
+              <td>—</td><td>0</td>
+              <td class="muted">—</td><td class="muted">—</td><td class="muted">—</td>
+              <td class="muted">Lau Vanegas</td>
+            </tr>
+            <tr>
+              <td><strong>Creel</strong></td>
+              <td><span class="badge badge-cita">Por activar</span></td>
+              <td>—</td><td>0</td>
+              <td class="muted">—</td><td class="muted">—</td><td class="muted">—</td>
+              <td class="muted">Lau Vanegas</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="charts-grid charts-grid-2">
+        <div class="chart-card">
+          <div class="chart-card-title">Distribución de productos contratados (Kearney)</div>
+          <div style="height:220px;"><canvas id="chart-productos"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-title">Clientes por segmento de AUM</div>
+          <div style="height:220px;"><canvas id="chart-aum-segmentos"></canvas></div>
+        </div>
+      </div>
+
+    </div><!-- /resultados -->
+
+
+    <!-- ══ KEARNEY ═══════════════════════════════════════════════════════ -->
+    <div class="view" id="view-kearney">
+
+      <div class="section-header">
+        <div class="section-title">Kearney — Seguimiento de cuenta</div>
+        <div class="section-rule"></div>
+      </div>
+
+      <div class="kpi-grid kpi-grid-4">
+        <div class="kpi-card highlight">
+          <div class="kpi-label">AUM total (MXN)</div>
+          <div class="kpi-value" style="font-size:24px;">$12.05M</div>
+          <div class="kpi-sub">Activos bajo administración</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Clientes registrados</div>
+          <div class="kpi-value">39</div>
+          <div class="kpi-sub">de 50 empleados afluentes</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Penetración</div>
+          <div class="kpi-value">78%</div>
+          <div class="kpi-sub">39 / 50 afluentes</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Clientes fondeados</div>
+          <div class="kpi-value">23</div>
+          <div class="kpi-sub">60.5% de registrados</div>
+        </div>
+      </div>
+
+      <div class="kpi-grid kpi-grid-3">
+        <div class="kpi-card">
+          <div class="kpi-label">AUM promedio fondeados (MXN)</div>
+          <div class="kpi-value" style="font-size:26px;">$9.9M</div>
+          <div class="kpi-sub">$512K MXN</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Clientes sin fondeo</div>
+          <div class="kpi-value">16</div>
+          <div class="kpi-sub">Oportunidad de activación</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Industria · Región</div>
+          <div class="kpi-value" style="font-size:20px;">Consultoría</div>
+          <div class="kpi-sub">CDMX · 100 empleados totales</div>
+        </div>
+      </div>
+
+      <div class="chart-card" style="margin-bottom:20px;">
+        <div class="chart-card-title">Avance de penetración — empleados afluentes</div>
+        <div style="margin-top:8px;">
+          <div class="penet-bar-bg"><div class="penet-bar-fill" style="width:78%;"></div></div>
+          <div class="penet-labels"><span>0</span><span style="color:var(--sunset);">39 clientes registrados</span><span>50 afluentes</span></div>
+        </div>
+      </div>
+
+      <div class="charts-grid charts-grid-2">
+        <div class="chart-card">
+          <div class="chart-card-title">Distribución de productos</div>
+          <div style="height:200px;"><canvas id="chart-k-productos"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-title">Clientes por segmento de AUM</div>
+          <div style="height:200px;"><canvas id="chart-k-aum"></canvas></div>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <div class="table-header">
+          <span class="table-header-title">Detalle clientes B2C — Kearney</span>
+          <div style="display:flex;gap:6px;">
+            <button class="filter-btn active" data-filter="todos">Todos (39)</button>
+            <button class="filter-btn" data-filter="fondeados">Fondeados (23)</button>
+            <button class="filter-btn" data-filter="nofondeados">Sin fondeo (16)</button>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Cliente ID</th><th>Fondeado</th><th>AUM (MXN)</th><th style="width:180px;">Barra AUM</th><th>Productos</th><th>#</th></tr>
+          </thead>
+          <tbody id="tbody-kearney"></tbody>
+        </table>
+      </div>
+
+    </div><!-- /kearney -->
+
+
+    <!-- ══ ZURICH ════════════════════════════════════════════════════════ -->
+    <div class="view" id="view-zurich">
+
+      <div class="section-header">
+        <div class="section-title">Zurich — Seguimiento de cuenta</div>
+        <div class="section-rule"></div>
+      </div>
+
+      <div class="kpi-grid kpi-grid-4">
+        <div class="kpi-card highlight">
+          <div class="kpi-label">Etapa actual</div>
+          <div class="kpi-value" style="font-size:20px;">Kick Off</div>
+          <div class="kpi-sub">Inicio: 9 Jun 2026</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Empleados totales</div>
+          <div class="kpi-value">1,500</div>
+          <div class="kpi-sub">Tamaño de empresa</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Clientes en apertura</div>
+          <div class="kpi-value">18</div>
+          <div class="kpi-sub">En proceso de alta</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">AUM total</div>
+          <div class="kpi-value">$0</div>
+          <div class="kpi-sub">Pendiente fondeo</div>
+        </div>
+      </div>
+
+      <div class="note-card">
+        <div class="note-label">Nota de seguimiento</div>
+        <div class="note-text">Avanza proceso de KO. Zurich solicitó información sobre ciberseguridad y notas al contrato. Regina prepara respuesta a dudas técnicas y de seguridad. Solicitan cambio de nombre a PTU — se llevan propuestas. Último contacto: 15 Jun 2026.</div>
+      </div>
+
+      <!-- Funnel Comercial -->
+      <div class="section-header">
+        <div class="section-title">Funnel comercial</div>
+        <div class="section-rule"></div>
+      </div>
+
+      <div class="funnel-comercial">
+        <div class="funnel-tree">
+
+          <!-- Nivel 1 -->
+          <div class="funnel-node">
+            <div class="funnel-node-card root">
+              <div class="funnel-node-label">Total empleados</div>
+              <div style="text-align:right;">
+                <div class="funnel-node-val">1,500</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Nivel 2 -->
+          <div class="funnel-node" style="margin-left:20px;">
+            <div class="funnel-connector">
+              <div class="funnel-connector-dot"></div>
+              <div class="funnel-connector-line"></div>
+            </div>
+            <div class="funnel-node-card">
+              <div class="funnel-node-label">Conectados al Kick Off</div>
+              <div style="text-align:right;">
+                <div class="funnel-node-val">600</div>
+                <div class="funnel-node-pct">40% del total</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Nivel 3 -->
+          <div class="funnel-node" style="margin-left:40px;">
+            <div class="funnel-connector">
+              <div class="funnel-connector-dot"></div>
+              <div class="funnel-connector-line"></div>
+            </div>
+            <div class="funnel-node-card">
+              <div class="funnel-node-label">Ingresos a la Landing Page</div>
+              <div style="text-align:right;">
+                <div class="funnel-node-val">367</div>
+                <div class="funnel-node-pct">61.2% del KO</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Nivel 4 -->
+          <div class="funnel-node" style="margin-left:60px;">
+            <div class="funnel-connector">
+              <div class="funnel-connector-dot"></div>
+              <div class="funnel-connector-line"></div>
+            </div>
+            <div class="funnel-node-card">
+              <div class="funnel-node-label">Leads registrados</div>
+              <div style="text-align:right;">
+                <div class="funnel-node-val">97</div>
+                <div class="funnel-node-pct">26.4% de la LP</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Nivel 5 -->
+          <div class="funnel-node" style="margin-left:80px;">
+            <div class="funnel-connector">
+              <div class="funnel-connector-dot"></div>
+              <div class="funnel-connector-line"></div>
+            </div>
+            <div class="funnel-node-card">
+              <div class="funnel-node-label">Citas totales agendadas</div>
+              <div style="text-align:right;">
+                <div class="funnel-node-val">63</div>
+                <div class="funnel-node-pct">64.9% de leads</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Nivel 6 -->
+          <div class="funnel-node" style="margin-left:100px;">
+            <div class="funnel-connector">
+              <div class="funnel-connector-dot"></div>
+              <div class="funnel-connector-line"></div>
+            </div>
+            <div class="funnel-node-card">
+              <div class="funnel-node-label">Clientes en proceso de apertura</div>
+              <div style="text-align:right;">
+                <div class="funnel-node-val">18</div>
+                <div class="funnel-node-pct">28.6% de citas</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Sub-split nivel 7 -->
+        <div style="margin-left:120px;margin-top:4px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+            <div class="funnel-sub-card">
+              <div class="funnel-sub-label">Interesados en membresías</div>
+              <div class="funnel-sub-val" style="color:var(--sunset);">8</div>
+              <div style="font-size:10px;color:var(--subtitle-dim);margin-top:4px;">57% de los 18 en apertura</div>
+            </div>
+            <div style="display:grid;grid-template-rows:1fr 1fr;gap:8px;">
+              <div class="funnel-sub-card">
+                <div class="funnel-sub-label">Clientes fondeados</div>
+                <div class="funnel-sub-val">0</div>
+              </div>
+              <div class="funnel-sub-card">
+                <div class="funnel-sub-label">AUM generado (MXN)</div>
+                <div class="funnel-sub-val">$0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Datos del cliente -->
+      <div class="section-header" style="margin-top:8px;">
+        <div class="section-title">Datos de la cuenta</div>
+        <div class="section-rule"></div>
+      </div>
+
+      <div class="chart-card" style="margin-bottom:20px;">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:24px;">
+          <div>
+            <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--subtitle-dim);margin-bottom:6px;">Responsable</div>
+            <span style="font-size:13px;">Ro Guzmán</span>
+          </div>
+          <div>
+            <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--subtitle-dim);margin-bottom:6px;">Owner</div>
+            <span style="font-size:13px;">Laura Vanegas</span>
+          </div>
+          <div>
+            <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--subtitle-dim);margin-bottom:6px;">Industria</div>
+            <span style="font-size:13px;">Seguros · CDMX</span>
+          </div>
+          <div>
+            <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--subtitle-dim);margin-bottom:6px;">Contactos clave</div>
+            <span style="font-size:12px;color:var(--subtitle-light);">Mark Martinez (CEO)<br>Cristian del Rio (CFO)<br>Sandra Jaime (Dir CH)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Next Steps -->
+      <div class="section-header">
+        <div class="section-title">Next Steps</div>
+        <div class="section-rule"></div>
+      </div>
+
+      <div class="next-steps-grid">
+        <div class="next-step-card">
+          <div class="next-step-num">1</div>
+          <div class="next-step-body">
+            <div class="next-step-title">Programa de C-Level Banca Partner</div>
+            <div class="next-step-resp">Responsables: <span>Rodrigo Guzmán</span> · <span>Cristian del Rio</span></div>
+          </div>
+          <div class="next-step-status"><span class="badge badge-proceso">En proceso</span></div>
+        </div>
+        <div class="next-step-card">
+          <div class="next-step-num">2</div>
+          <div class="next-step-body">
+            <div class="next-step-title">Agendar 1er Webinar</div>
+            <div class="next-step-resp">Responsable: <span>Regina Pereda</span></div>
+          </div>
+          <div class="next-step-status"><span class="badge badge-pendiente">Pendiente</span></div>
+        </div>
+      </div>
+
+    </div><!-- /zurich -->
+
+
+
+    <!-- ══ SOY+ ══════════════════════════════════════════════════════════ -->
+    <div class="view" id="view-soym">
+
+      <div class="section-header">
+        <div class="section-title">Soy+ — Seguimiento de cuenta</div>
+        <div class="section-rule"></div>
+      </div>
+
+      <div class="kpi-grid kpi-grid-4">
+        <div class="kpi-card highlight">
+          <div class="kpi-label">Etapa actual</div>
+          <div class="kpi-value" style="font-size:20px;">Activo</div>
+          <div class="kpi-sub">Cerrado Won · 2026</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Empleados totales</div>
+          <div class="kpi-value">—</div>
+          <div class="kpi-sub">Por definir</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Clientes B2C</div>
+          <div class="kpi-value">0</div>
+          <div class="kpi-sub">Sin datos aún</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">AUM total</div>
+          <div class="kpi-value">$0</div>
+          <div class="kpi-sub">Sin datos aún</div>
+        </div>
+      </div>
+
+      <div class="note-card">
+        <div class="note-label">Nota de seguimiento</div>
+        <div class="note-text">Empresa cerrada como Closed Won. Kick off pendiente de agendar. Sin datos de empleados afluentes ni clientes B2C registrados aún. Responsable: Ro Guzmán · Owner: Rodrigo Guzmán.</div>
+      </div>
+
+      <!-- Funnel placeholder -->
+      <div class="section-header">
+        <div class="section-title">Funnel comercial</div>
+        <div class="section-rule"></div>
+      </div>
+
+      <div class="funnel-comercial">
+        <div class="funnel-tree">
+          <div class="funnel-node">
+            <div class="funnel-node-card root">
+              <div class="funnel-node-label">Total empleados</div>
+              <div style="text-align:right;"><div class="funnel-node-val">—</div></div>
+            </div>
+          </div>
+          <div class="funnel-node" style="margin-left:20px;">
+            <div class="funnel-connector"><div class="funnel-connector-dot" style="background:var(--subtitle-dim)"></div><div class="funnel-connector-line"></div></div>
+            <div class="funnel-node-card" style="opacity:.4;">
+              <div class="funnel-node-label">Conectados al Kick Off</div>
+              <div style="text-align:right;"><div class="funnel-node-val">—</div></div>
+            </div>
+          </div>
+          <div class="funnel-node" style="margin-left:40px;">
+            <div class="funnel-connector"><div class="funnel-connector-dot" style="background:var(--subtitle-dim)"></div><div class="funnel-connector-line"></div></div>
+            <div class="funnel-node-card" style="opacity:.4;">
+              <div class="funnel-node-label">Ingresos a la Landing Page</div>
+              <div style="text-align:right;"><div class="funnel-node-val">—</div></div>
+            </div>
+          </div>
+          <div class="funnel-node" style="margin-left:60px;">
+            <div class="funnel-connector"><div class="funnel-connector-dot" style="background:var(--subtitle-dim)"></div><div class="funnel-connector-line"></div></div>
+            <div class="funnel-node-card" style="opacity:.4;">
+              <div class="funnel-node-label">Leads registrados</div>
+              <div style="text-align:right;"><div class="funnel-node-val">—</div></div>
+            </div>
+          </div>
+          <div class="funnel-node" style="margin-left:80px;">
+            <div class="funnel-connector"><div class="funnel-connector-dot" style="background:var(--subtitle-dim)"></div><div class="funnel-connector-line"></div></div>
+            <div class="funnel-node-card" style="opacity:.4;">
+              <div class="funnel-node-label">Citas agendadas</div>
+              <div style="text-align:right;"><div class="funnel-node-val">—</div></div>
+            </div>
+          </div>
+          <div class="funnel-node" style="margin-left:100px;">
+            <div class="funnel-connector"><div class="funnel-connector-dot" style="background:var(--subtitle-dim)"></div></div>
+            <div class="funnel-node-card" style="opacity:.4;">
+              <div class="funnel-node-label">Clientes en apertura</div>
+              <div style="text-align:right;"><div class="funnel-node-val">—</div></div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-left:120px;margin-top:4px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;opacity:.4;">
+            <div class="funnel-sub-card"><div class="funnel-sub-label">Clientes fondeados</div><div class="funnel-sub-val">—</div></div>
+            <div class="funnel-sub-card"><div class="funnel-sub-label">AUM generado (MXN)</div><div class="funnel-sub-val">—</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Datos de la cuenta -->
+      <div class="section-header" style="margin-top:8px;">
+        <div class="section-title">Datos de la cuenta</div>
+        <div class="section-rule"></div>
+      </div>
+
+      <div class="chart-card" style="margin-bottom:20px;">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:24px;">
+          <div>
+            <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--subtitle-dim);margin-bottom:6px;">Responsable</div>
+            <span style="font-size:13px;">Ro Guzmán</span>
+          </div>
+          <div>
+            <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--subtitle-dim);margin-bottom:6px;">Owner</div>
+            <span style="font-size:13px;">Rodrigo Guzmán</span>
+          </div>
+          <div>
+            <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--subtitle-dim);margin-bottom:6px;">Industria</div>
+            <span style="font-size:13px;">Telecomunicaciones · CDMX</span>
+          </div>
+          <div>
+            <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--subtitle-dim);margin-bottom:6px;">Canal</div>
+            <span style="font-size:13px;">Banca Partner</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Next Steps placeholder -->
+      <div class="section-header">
+        <div class="section-title">Next Steps</div>
+        <div class="section-rule"></div>
+      </div>
+      <div class="note-card" style="background:rgba(255,255,255,0.02);border-color:var(--border-soft);">
+        <div class="note-label" style="color:var(--subtitle-dim);">Pendiente definir</div>
+        <div class="note-text" style="color:var(--subtitle-dim);">Los próximos pasos se definirán una vez que se confirme la fecha de kick off y se asignen responsables.</div>
+      </div>
+
+    </div><!-- /soym -->
+
+    <!-- ══ CREEL ═════════════════════════════════════════════════════════ -->
+    <div class="view" id="view-creel">
+
+      <div class="section-header">
+        <div class="section-title">Creel — Seguimiento de cuenta</div>
+        <div class="section-rule"></div>
+      </div>
+
+      <div class="kpi-grid kpi-grid-4">
+        <div class="kpi-card highlight">
+          <div class="kpi-label">Etapa actual</div>
+          <div class="kpi-value" style="font-size:18px;">Por activar</div>
+          <div class="kpi-sub">Kick off tentativo: 1 Jul 2026</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Empleados totales</div>
+          <div class="kpi-value">400</div>
+          <div class="kpi-sub">Tamaño de empresa</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Clientes B2C</div>
+          <div class="kpi-value">0</div>
+          <div class="kpi-sub">Sin datos aún</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">AUM total</div>
+          <div class="kpi-value">$0</div>
+          <div class="kpi-sub">Sin datos aún</div>
+        </div>
+      </div>
+
+      <div class="note-card">
+        <div class="note-label">Nota de seguimiento</div>
+        <div class="note-text">Llamada con Juan Manuel Pinedo confirmó interés en arrancar. Propuesta enviada por Actinver para inicio soft. Landing page lista. Creel preparó comunicado para posible fecha de inicio. Llamada programada para 15 Jun 2026. Último contacto: 15 Jun 2026.</div>
+      </div>
+
+      <!-- Funnel Comercial placeholder -->
+      <div class="section-header">
+        <div class="section-title">Funnel comercial</div>
+        <div class="section-rule"></div>
+      </div>
+
+      <div class="funnel-comercial">
+        <div class="funnel-tree">
+          <div class="funnel-node">
+            <div class="funnel-node-card root">
+              <div class="funnel-node-label">Total empleados</div>
+              <div style="text-align:right;"><div class="funnel-node-val">400</div></div>
+            </div>
+          </div>
+          <div class="funnel-node" style="margin-left:20px;">
+            <div class="funnel-connector"><div class="funnel-connector-dot"></div><div class="funnel-connector-line"></div></div>
+            <div class="funnel-node-card" style="opacity:.45;">
+              <div class="funnel-node-label">Conectados al Kick Off</div>
+              <div style="text-align:right;"><div class="funnel-node-val">—</div></div>
+            </div>
+          </div>
+          <div class="funnel-node" style="margin-left:40px;">
+            <div class="funnel-connector"><div class="funnel-connector-dot" style="background:var(--subtitle-dim)"></div><div class="funnel-connector-line"></div></div>
+            <div class="funnel-node-card" style="opacity:.45;">
+              <div class="funnel-node-label">Ingresos a la Landing Page</div>
+              <div style="text-align:right;"><div class="funnel-node-val">—</div></div>
+            </div>
+          </div>
+          <div class="funnel-node" style="margin-left:60px;">
+            <div class="funnel-connector"><div class="funnel-connector-dot" style="background:var(--subtitle-dim)"></div><div class="funnel-connector-line"></div></div>
+            <div class="funnel-node-card" style="opacity:.45;">
+              <div class="funnel-node-label">Leads registrados</div>
+              <div style="text-align:right;"><div class="funnel-node-val">—</div></div>
+            </div>
+          </div>
+          <div class="funnel-node" style="margin-left:80px;">
+            <div class="funnel-connector"><div class="funnel-connector-dot" style="background:var(--subtitle-dim)"></div><div class="funnel-connector-line"></div></div>
+            <div class="funnel-node-card" style="opacity:.45;">
+              <div class="funnel-node-label">Citas totales agendadas</div>
+              <div style="text-align:right;"><div class="funnel-node-val">—</div></div>
+            </div>
+          </div>
+          <div class="funnel-node" style="margin-left:100px;">
+            <div class="funnel-connector"><div class="funnel-connector-dot" style="background:var(--subtitle-dim)"></div></div>
+            <div class="funnel-node-card" style="opacity:.45;">
+              <div class="funnel-node-label">Clientes en proceso de apertura</div>
+              <div style="text-align:right;"><div class="funnel-node-val">—</div></div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-left:120px;margin-top:4px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;opacity:.45;">
+            <div class="funnel-sub-card">
+              <div class="funnel-sub-label">Interesados en membresías</div>
+              <div class="funnel-sub-val">—</div>
+            </div>
+            <div style="display:grid;grid-template-rows:1fr 1fr;gap:8px;">
+              <div class="funnel-sub-card"><div class="funnel-sub-label">Clientes fondeados</div><div class="funnel-sub-val">—</div></div>
+              <div class="funnel-sub-card"><div class="funnel-sub-label">AUM generado (MXN)</div><div class="funnel-sub-val">—</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Datos de la cuenta -->
+      <div class="section-header" style="margin-top:8px;">
+        <div class="section-title">Datos de la cuenta</div>
+        <div class="section-rule"></div>
+      </div>
+
+      <div class="chart-card" style="margin-bottom:20px;">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:24px;">
+          <div>
+            <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--subtitle-dim);margin-bottom:6px;">Responsable</div>
+            <span style="font-size:13px;">Ro Guzmán</span>
+          </div>
+          <div>
+            <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--subtitle-dim);margin-bottom:6px;">Owner</div>
+            <span style="font-size:13px;">Laura Vanegas</span>
+          </div>
+          <div>
+            <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--subtitle-dim);margin-bottom:6px;">Industria</div>
+            <span style="font-size:13px;">Servicios legales · CDMX</span>
+          </div>
+          <div>
+            <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--subtitle-dim);margin-bottom:6px;">Contactos clave</div>
+            <span style="font-size:12px;color:var(--subtitle-light);">Juan Manuel Pinedo (COO)<br>Ana María Ortega (CFO)<br>May Khoury (Dir CH)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Next Steps placeholder -->
+      <div class="section-header">
+        <div class="section-title">Next Steps</div>
+        <div class="section-rule"></div>
+      </div>
+
+      <div class="note-card" style="background:rgba(255,255,255,0.02);border-color:var(--border-soft);">
+        <div class="note-label" style="color:var(--subtitle-dim);">Pendiente definir</div>
+        <div class="note-text" style="color:var(--subtitle-dim);">Los próximos pasos se agregarán una vez que se confirme la fecha de kick off y se asignen responsables.</div>
+      </div>
+
+      <!-- Clientes B2C placeholder -->
+      <div class="section-header">
+        <div class="section-title">Clientes B2C</div>
+        <div class="section-rule"></div>
+      </div>
+
+      <div class="table-wrap">
+        <div class="table-header">
+          <span class="table-header-title">Sin clientes registrados aún</span>
+        </div>
+        <div class="empty-state">
+          <div class="empty-state-icon">◎</div>
+          <div class="empty-state-title">Sin datos disponibles</div>
+          <div class="empty-state-sub">Los clientes B2C se agregarán conforme avance la activación de Creel.</div>
+        </div>
+      </div>
+
+    </div><!-- /creel -->
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+// ── DATA ─────────────────────────────────────────────────────────────────
+
+const PIPELINE = [
+  {empresa:"Kearney",etapa:"Cerrado",canal:"Banca Partner",industria:"Consultoría",region:"CDMX",empleados:"100",responsable:"Ro Guzmán",owner:"Laura Vanegas"},
+  {empresa:"Zurich",etapa:"Cerrado",canal:"Banca Partner",industria:"Seguros",region:"CDMX",empleados:"1,500",responsable:"Ro Guzmán",owner:"Laura Vanegas"},
+  {empresa:"Soy+",etapa:"Cerrado",canal:"Banca Partner",industria:"Telecomunicaciones",region:"CDMX",empleados:"—",responsable:"Ro Guzmán",owner:"Rodrigo Guzmán"},
+  {empresa:"Accenture",etapa:"En activación",canal:"Banca Partner",industria:"Consultoría y tech",region:"CDMX",empleados:"5,000",responsable:"Ro Guzmán",owner:"Laura Vanegas"},
+  {empresa:"Creel",etapa:"En activación",canal:"Banca Partner",industria:"Servicios legales",region:"CDMX",empleados:"400",responsable:"Ro Guzmán",owner:"Laura Vanegas"},
+  {empresa:"Oracle",etapa:"En activación",canal:"Banca Partner",industria:"Software / tech",region:"CDMX",empleados:"5,000",responsable:"Ro Guzmán",owner:"Laura Vanegas"},
+  {empresa:"Mijares",etapa:"En activación",canal:"—",industria:"—",region:"—",empleados:"—",responsable:"Ro Guzmán",owner:"—"},
+  {empresa:"EY",etapa:"En negociación",canal:"Banca Partner",industria:"Auditoría y consultoría",region:"CDMX",empleados:"2,900",responsable:"Ro Guzmán",owner:"Laura Vanegas"},
+  {empresa:"Deloitte",etapa:"En negociación",canal:"Banca Partner",industria:"Auditoría y consultoría",region:"Monterrey",empleados:"750",responsable:"Ro Guzmán",owner:"Laura Vanegas"},
+  {empresa:"Nader Hayaux y Goebel",etapa:"En negociación",canal:"Banca Partner",industria:"Servicios legales",region:"CDMX",empleados:"100",responsable:"Ro Guzmán",owner:"JGallastegui"},
+  {empresa:"Grupo Expansión",etapa:"En negociación",canal:"Privada",industria:"Medios / editorial",region:"CDMX",empleados:"750",responsable:"Ro Guzmán",owner:"Evangelina Landeros"},
+  {empresa:"Radio Centro",etapa:"En negociación",canal:"Privada",industria:"Medios / radio",region:"CDMX",empleados:"300",responsable:"Ro Guzmán",owner:"Karen Ornelas"},
+  {empresa:"Salesforce",etapa:"En negociación",canal:"Banca Partner",industria:"Software / SaaS",region:"CDMX",empleados:"500",responsable:"Ro Guzmán",owner:"Laura Vanegas"},
+  {empresa:"Nasdaq",etapa:"En negociación",canal:"Banca Partner",industria:"Mercados financieros",region:"CDMX",empleados:"300",responsable:"Ro Guzmán",owner:"Laura Vanegas"},
+  {empresa:"Qualtop",etapa:"En negociación",canal:"WM",industria:"Manufactura",region:"CDMX",empleados:"1,000",responsable:"Ro Guzmán",owner:"Alejandra Eguiluz"},
+  {empresa:"Peña Verde",etapa:"En negociación",canal:"WM",industria:"—",region:"CDMX",empleados:"—",responsable:"Ro Guzmán",owner:"—"},
+  {empresa:"PWC",etapa:"Cita agendada",canal:"Banca Partner",industria:"Auditoría y consultoría",region:"CDMX",empleados:"4,000",responsable:"Diego GM",owner:"Laura Vanegas"},
+  {empresa:"Nestle",etapa:"Cita agendada",canal:"Privada",industria:"Consumo masivo",region:"CDMX",empleados:"—",responsable:"Ro Guzmán",owner:"Nicole Cazares"},
+  {empresa:"Netflix",etapa:"Contacto",canal:"Banca Partner",industria:"Entretenimiento",region:"CDMX",empleados:"300",responsable:"Ro Guzmán",owner:"Rodrigo Guzmán"},
+  {empresa:"CBRE",etapa:"Contacto",canal:"Privada",industria:"Servicios inmobiliarios",region:"CDMX",empleados:"1,200",responsable:"Ro Guzmán",owner:"José María Mancilla"},
+  {empresa:"Teva Pharma Mexico",etapa:"Contacto",canal:"Previsión Social",industria:"Farmacéutica",region:"CDMX",empleados:"—",responsable:"Ro Guzmán",owner:"Paulina Beristain"},
+  {empresa:"Olimpus America de Mexico",etapa:"Contacto",canal:"Previsión Social",industria:"Tecnología médica",region:"CDMX",empleados:"—",responsable:"Ro Guzmán",owner:"Paulina Beristain"},
+  {empresa:"Softtek",etapa:"Contacto",canal:"Privada",industria:"Tecnología / software",region:"Monterrey",empleados:"7,000",responsable:"Diego GM",owner:"—"},
+  {empresa:"McKinsey",etapa:"Prospecto",canal:"Banca Partner",industria:"Consultoría",region:"CDMX",empleados:"—",responsable:"Diego GM",owner:"Laura Vanegas"},
+  {empresa:"Chevez Ruiz",etapa:"Prospecto",canal:"Banca Partner",industria:"Servicios legales",region:"CDMX",empleados:"—",responsable:"Diego GM",owner:"Laura Vanegas"},
+  {empresa:"Royal Holiday",etapa:"Prospecto",canal:"Patrimonial",industria:"Turismo",region:"CDMX",empleados:"—",responsable:"Ro Guzmán",owner:"Carlos Silva Chio"},
+  {empresa:"Shasa",etapa:"Prospecto",canal:"Privada",industria:"Retail",region:"CDMX",empleados:"—",responsable:"Ro Guzmán",owner:"Rodrigo Moreno"},
+  {empresa:"Basham Ringe y Correa",etapa:"Prospecto",canal:"Privada",industria:"Servicios legales",region:"CDMX",empleados:"300",responsable:"Ro Guzmán",owner:"José Maria Mancilla"},
+  {empresa:"CIE/Ocesa",etapa:"Prospecto",canal:"Corporativa",industria:"Entretenimiento",region:"CDMX",empleados:"1,000",responsable:"Ro Guzmán",owner:"—"},
+  {empresa:"Rassini",etapa:"Prospecto",canal:"Corporativa",industria:"Manufactura",region:"CDMX",empleados:"—",responsable:"Ro Guzmán",owner:"—"},
+  {empresa:"Alsea",etapa:"Prospecto",canal:"Corporativa",industria:"Restaurantes / retail",region:"CDMX",empleados:"—",responsable:"Ro Guzmán",owner:"—"},
+  {empresa:"IAMSA",etapa:"Prospecto",canal:"Corporativa",industria:"Transporte",region:"CDMX",empleados:"—",responsable:"Ro Guzmán",owner:"—"},
+  {empresa:"Waldos",etapa:"Prospecto",canal:"Corporativa",industria:"Retail",region:"CDMX",empleados:"—",responsable:"Ro Guzmán",owner:"—"},
+  {empresa:"Colgate",etapa:"Prospecto",canal:"Privada",industria:"Consumo masivo",region:"CDMX",empleados:"—",responsable:"Ro Guzmán",owner:"Julian Lopez"},
+  {empresa:"José Cuervo",etapa:"Prospecto",canal:"Banca Partner",industria:"Bebidas / tequila",region:"CDMX",empleados:"—",responsable:"Ro Guzmán",owner:"Rodrigo Guzmán"},
+  {empresa:"General Motors",etapa:"Prospecto",canal:"Privada",industria:"Automotriz",region:"CDMX",empleados:"—",responsable:"Ro Guzmán",owner:"Aldo Quizaman"},
+  {empresa:"Sandvik",etapa:"Prospecto",canal:"Previsión Social",industria:"Manufactura",region:"CDMX",empleados:"—",responsable:"Ro Guzmán",owner:"Paulina Beristain"},
+  {empresa:"Iqsec",etapa:"Prospecto",canal:"Previsión Social",industria:"Tecnología",region:"—",empleados:"—",responsable:"Ro Guzmán",owner:"—"},
+  {empresa:"Paypal",etapa:"Cerrada perdida",canal:"Privada",industria:"Pagos digitales",region:"CDMX",empleados:"400",responsable:"Ro Guzmán",owner:"Julian Lopez"},
+  {empresa:"Minsait",etapa:"Cerrada perdida",canal:"Banca Partner",industria:"Tecnología",region:"CDMX",empleados:"—",responsable:"Ro Guzmán",owner:"Rodrigo Guzmán"},
+  {empresa:"ODOO",etapa:"Cerrada perdida",canal:"Privada",industria:"Software / ERP",region:"CDMX",empleados:"900",responsable:"Ro Guzmán",owner:"Germain Pierre"},
+  {empresa:"Grupo Danone",etapa:"Cerrada perdida",canal:"Privada",industria:"Consumo masivo",region:"CDMX",empleados:"—",responsable:"Ro Guzmán",owner:"Cristina Avila"},
+];
+
+const KEARNEY_CLIENTS = [
+  {id:"24027633",fondeado:false,aum:0,productos:["Inversión"]},
+  {id:"24125189",fondeado:true,aum:924694.53,productos:["Inversión","Divisas Flex"]},
+  {id:"22644488",fondeado:true,aum:848874.18,productos:["Inversión","PPR","Actinver Trade"]},
+  {id:"22661128",fondeado:true,aum:462684.94,productos:["Inversión","PPR","Banco digital"]},
+  {id:"22643753",fondeado:true,aum:1718288.72,productos:["Inversión","PPR","Actinver Trade"]},
+  {id:"24315863",fondeado:true,aum:253651.44,productos:["Inversión","PPR"]},
+  {id:"24197527",fondeado:false,aum:15444.34,productos:["Inversión","PPR"]},
+  {id:"24094823",fondeado:true,aum:1449220.60,productos:["Inversión","PPR","Seguros","Smart Picks"]},
+  {id:"24197592",fondeado:true,aum:405990.79,productos:["Inversión","PPR"]},
+  {id:"24197469",fondeado:true,aum:102656.22,productos:["Inversión","PPR"]},
+  {id:"24095887",fondeado:true,aum:1068768.39,productos:["Inversión","PPR"]},
+  {id:"24197667",fondeado:true,aum:268453.20,productos:["Inversión","PPR"]},
+  {id:"15196157",fondeado:false,aum:9158.68,productos:["Inversión"]},
+  {id:"24371643",fondeado:true,aum:171950.28,productos:["Inversión","PPR"]},
+  {id:"24454696",fondeado:true,aum:309247.38,productos:["Inversión","PPR"]},
+  {id:"24495541",fondeado:true,aum:274663.00,productos:["Inversión","PPR"]},
+  {id:"24486326",fondeado:true,aum:301.26,productos:["Inversión","PPR"]},
+  {id:"24452146",fondeado:true,aum:374592.14,productos:["Inversión","PPR"]},
+  {id:"24528804",fondeado:false,aum:32976.55,productos:["Inversión","PPR","Actinver Trade"]},
+  {id:"24685927",fondeado:false,aum:10060.84,productos:["Inversión","PPR"]},
+  {id:"14196158",fondeado:true,aum:207640.81,productos:["Inversión","PPR"]},
+  {id:"24835456",fondeado:true,aum:267820.51,productos:["Inversión","PPR"]},
+  {id:"95937173",fondeado:false,aum:0,productos:["Inversión","PPR"]},
+  {id:"24095002",fondeado:true,aum:888543.37,productos:["Inversión","PPR"]},
+  {id:"24846578",fondeado:true,aum:245086.73,productos:["Inversión","PPR"]},
+  {id:"24901811",fondeado:false,aum:27369.20,productos:["Inversión"]},
+  {id:"24904567",fondeado:false,aum:27369.20,productos:["Inversión"]},
+  {id:"24927931",fondeado:false,aum:0,productos:["Inversión"]},
+  {id:"25245747",fondeado:false,aum:50000,productos:["Inversión"]},
+  {id:"25311861",fondeado:true,aum:297299.66,productos:["Inversión"]},
+  {id:"25482761",fondeado:true,aum:615700.64,productos:["Inversión","PPR"]},
+  {id:"25554593",fondeado:false,aum:0,productos:["Inversión","PPR"]},
+  {id:"25616574",fondeado:false,aum:10668.93,productos:["Inversión"]},
+  {id:"26109306",fondeado:true,aum:100508.95,productos:["Inversión","PPR"]},
+  {id:"97083166",fondeado:true,aum:614982.58,productos:["Inversión"]},
+  {id:"26559179",fondeado:false,aum:0,productos:["Inversión"]},
+  {id:"26621748",fondeado:false,aum:0,productos:["Inversión","PPR"]},
+  {id:"26641936",fondeado:false,aum:0,productos:["Inversión","PPR"]},
+  {id:"26682559",fondeado:false,aum:0,productos:["Inversión","PPR"]},
+]
+
+KEARNEY_CLIENTS.forEach(c => { c.aumMXN = c.aum; });
+const maxAumMXN = Math.max(...KEARNEY_CLIENTS.map(c => c.aumMXN));
+
+// ── NAVIGATION ────────────────────────────────────────────────────────────
+
+const titles = {resumen:'Resumen',resultados:'Resultados Generales',kearney:'Kearney',zurich:'Zurich',soym:'Soy+',creel:'Creel'};
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    item.classList.add('active');
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    const v = item.dataset.view;
+    document.getElementById('view-' + v).classList.add('active');
+    document.getElementById('topbar-title').textContent = titles[v] || v;
+  });
+});
+
+// ── PIPELINE TABLE ────────────────────────────────────────────────────────
+
+function etapaBadge(e) {
+  const m = {'Cerrado':'badge-activo','En activación':'badge-activacion','En negociación':'badge-negociacion','Cita agendada':'badge-cita','Contacto':'badge-contacto','Prospecto':'badge-prospecto','Cerrada perdida':'badge-perdida'};
+  return `<span class="badge ${m[e]||'badge-prospecto'}">${e}</span>`;
+}
+
+function canalBadge(c) {
+  const m = {'Banca Partner':'#314566','Privada':'#7A6391','Corporativa':'#317A70','Patrimonial':'#B58657','Previsión Social':'#5A6A85','WM':'#4A7A8A','—':'#333'};
+  const col = m[c] || '#333';
+  return `<span style="display:inline-block;padding:1px 7px;border-radius:2px;font-size:9px;letter-spacing:.07em;background:${col}22;color:${col === '#333' ? 'var(--subtitle-dim)' : col};border:1px solid ${col}44;">${c}</span>`;
+}
+
+const etapaOrder = ['Cerrado','En activación','En negociación','Cita agendada','Contacto','Prospecto','Cerrada perdida'];
+const sorted = [...PIPELINE].sort((a,b) => etapaOrder.indexOf(a.etapa) - etapaOrder.indexOf(b.etapa));
+
+function renderPipelineTable(canalFilter) {
+  const tbody = document.getElementById('tbody-pipeline');
+  tbody.innerHTML = '';
+  const data = canalFilter === 'todos' ? sorted : sorted.filter(r => r.canal === canalFilter);
+  document.getElementById('canal-filter-label').textContent = canalFilter !== 'todos' ? `Filtrando: ${canalFilter} (${data.length})` : '';
+  data.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><strong>${r.empresa}</strong></td><td>${etapaBadge(r.etapa)}</td><td>${canalBadge(r.canal)}</td><td class="muted">${r.industria}</td><td class="muted">${r.region}</td><td class="muted">${r.empleados}</td><td class="muted">${r.responsable}</td><td class="muted">${r.owner}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+renderPipelineTable('todos');
+
+document.getElementById('canal-select').addEventListener('change', function() {
+  renderPipelineTable(this.value);
+  // Update canal chart highlight
+  updateCanalChart(this.value);
+});
+
+// ── KEARNEY TABLE ─────────────────────────────────────────────────────────
+
+function renderKearneyTable(filter) {
+  const tbody = document.getElementById('tbody-kearney');
+  tbody.innerHTML = '';
+  const data = filter === 'fondeados' ? KEARNEY_CLIENTS.filter(c => c.fondeado) :
+               filter === 'nofondeados' ? KEARNEY_CLIENTS.filter(c => !c.fondeado) : KEARNEY_CLIENTS;
+  data.forEach(c => {
+    const barW = maxAumMXN > 0 ? Math.round((c.aumMXN / maxAumMXN) * 160) : 0;
+    const tags = c.productos.map(p => `<span class="prod-tag">${p}</span>`).join('');
+    const mxnStr = c.aumMXN > 0 ? '$' + Math.round(c.aumMXN).toLocaleString('es-MX') : '—';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="muted">${c.id}</td><td style="text-align:center;"><span class="fondeado-dot ${c.fondeado?'yes':'no'}"></span></td><td>${mxnStr}</td><td><div style="display:flex;align-items:center;gap:8px;"><div style="height:4px;width:${barW}px;max-width:160px;border-radius:2px;background:var(--azul-actinver);flex-shrink:0;"></div></div></td><td><div class="prod-tags">${tags}</div></td><td class="muted" style="text-align:center;">${c.productos.length}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+renderKearneyTable('todos');
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderKearneyTable(btn.dataset.filter);
+  });
+});
+
+// ── CHARTS ────────────────────────────────────────────────────────────────
+
+const C = {
+  primary:'#314566', sunset:'#E6C78A', cat2:'#B58657', cat3:'#317A70',
+  cat4:'#7A6391', cat5:'#5A6A85', cat6:'#4A7A8A', dim:'rgba(255,255,255,0.1)'
+};
+Chart.defaults.color = '#8898AA';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.08)';
+Chart.defaults.font.family = "'Poppins', sans-serif";
+Chart.defaults.font.size = 11;
+
+// Pipeline donut
+new Chart(document.getElementById('chart-pipeline-donut'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Cerrado Won','En activación','En negociación','Cita agendada','Contacto','Prospecto','Cerrada perdida'],
+    datasets: [{ data: [3,4,9,2,5,15,4], backgroundColor: [C.cat3,'#5A7AAD',C.sunset,C.cat4,'#8898AA',C.primary,'#7A3A3A'], borderWidth:0 }]
+  },
+  options: { cutout:'62%', plugins:{ legend:{ position:'right', labels:{boxWidth:10,padding:10,font:{size:10}} } } }
+});
+
+// Canal chart
+const canalData = {
+  'Banca Partner': PIPELINE.filter(r=>r.canal==='Banca Partner').length,
+  'Privada': PIPELINE.filter(r=>r.canal==='Privada').length,
+  'Corporativa': PIPELINE.filter(r=>r.canal==='Corporativa').length,
+  'Previsión Social': PIPELINE.filter(r=>r.canal==='Previsión Social').length,
+  'WM': PIPELINE.filter(r=>r.canal==='WM').length,
+  'Patrimonial': PIPELINE.filter(r=>r.canal==='Patrimonial').length,
+};
+const canalColors = [C.primary, C.cat4, C.sunset, C.cat5, C.cat6, C.cat2];
+const canalChart = new Chart(document.getElementById('chart-canal'), {
+  type: 'bar',
+  data: {
+    labels: Object.keys(canalData),
+    datasets: [{ data: Object.values(canalData), backgroundColor: canalColors, borderWidth:0, borderRadius:2 }]
+  },
+  options: {
+    plugins:{ legend:{display:false} },
+    scales:{
+      x:{grid:{display:false},ticks:{font:{size:9}}},
+      y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{stepSize:2}}
+    }
+  }
+});
+
+function updateCanalChart(selected) {
+  const vals = Object.values(canalData);
+  const labels = Object.keys(canalData);
+  canalChart.data.datasets[0].backgroundColor = labels.map((l,i) =>
+    selected === 'todos' || l === selected ? canalColors[i] : 'rgba(255,255,255,0.1)'
+  );
+  canalChart.update();
+}
+
+// Productos
+function prodChartData() {
+  const counts = {};
+  KEARNEY_CLIENTS.forEach(c => c.productos.forEach(p => counts[p]=(counts[p]||0)+1));
+  return Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+}
+const prodData = prodChartData();
+[document.getElementById('chart-productos'), document.getElementById('chart-k-productos')].forEach(el => {
+  if(!el) return;
+  new Chart(el, {
+    type:'bar',
+    data:{
+      labels:prodData.map(e=>e[0]),
+      datasets:[{data:prodData.map(e=>e[1]),backgroundColor:[C.sunset,...Array(prodData.length-1).fill(C.primary)],borderWidth:0,borderRadius:2}]
+    },
+    options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{stepSize:5}}}}
+  });
+});
+
+// AUM segmentos
+function aumSegs() {
+  const s = {'$0':0,'$1-$50K':0,'$50K-$100K':0,'$100K-$300K':0,'$300K-$600K':0,'$600K+':0};
+  KEARNEY_CLIENTS.forEach(c => {
+    const a = c.aum;
+    if(a===0) s['$0']++;
+    else if(a<50000) s['$1-$50K']++;
+    else if(a<100000) s['$50K-$100K']++;
+    else if(a<300000) s['$100K-$300K']++;
+    else if(a<600000) s['$300K-$600K']++;
+    else s['$600K+']++;
+  });
+  return s;
+}
+const segs = aumSegs();
+const segColors = [C.dim,'#4A5A7A','#5A7AAD',C.primary,C.cat2,C.sunset];
+[document.getElementById('chart-aum-segmentos'), document.getElementById('chart-k-aum')].forEach(el => {
+  if(!el) return;
+  new Chart(el, {
+    type:'bar',
+    data:{labels:Object.keys(segs),datasets:[{data:Object.values(segs),backgroundColor:segColors,borderWidth:0,borderRadius:2}]},
+    options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{stepSize:2}}}}
+  });
+});
+
+</script>
+</body>
+</html>
